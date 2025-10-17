@@ -18,7 +18,8 @@ public class PdfPrinter {
 
     /**
      * Cria um PDF simples com uma lista de estudantes (um por linha).
-     * @param students lista de Student
+     *
+     * @param students       lista de Student
      * @param outputFilePath caminho do ficheiro PDF para criar
      * @throws IOException em caso de erro de I/O
      */
@@ -94,6 +95,7 @@ public class PdfPrinter {
     /**
      * Imprime o PDF para a impressora padrão (ou abre diálogo para escolher).
      * Usa PDFPageable do PDFBox para enviar páginas corretamente.
+     *
      * @param pdfFilePath caminho do ficheiro PDF a imprimir
      * @throws Exception em caso de erro de impressão ou I/O
      */
