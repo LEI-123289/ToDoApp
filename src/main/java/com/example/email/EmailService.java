@@ -45,9 +45,9 @@ public class EmailService {
 
             Transport.send(message);
 
-            System.out.println("✅ Email enviado com sucesso para " + destinatario);
+            System.out.println("Email enviado com sucesso para " + destinatario);
         } catch (MessagingException e) {
-            System.err.println("❌ Erro ao enviar email: " + e.getMessage());
+            System.err.println("Erro ao enviar email: " + e.getMessage());
             e.printStackTrace();
         }
     }
