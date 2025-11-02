@@ -3,7 +3,9 @@ package com.example.examplefeature.ui;
 import com.example.base.ui.component.ViewToolbar;
 import com.example.examplefeature.Task;
 import com.example.examplefeature.TaskService;
-// START: NOVAS IMPORTAÇÕES ESSENCIAIS PARA QR CODE
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+// --- IMPORTAÇÕES PARA QR CODE ---
 import com.example.examplefeature.QRCodeGenerator;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Image;
@@ -11,7 +13,15 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.server.StreamResource;
 import java.io.ByteArrayInputStream;
-// END: NOVAS IMPORTAÇÕES
+// --- FIM IMPORTAÇÕES QR CODE ---
+
+// --- IMPORTAÇÕES PARA CÂMBIO DE MOEDA ---
+import com.example.ExchangeRateService;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.select.Select;
+// --- FIM IMPORTAÇÕES CÂMBIO ---
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -38,8 +48,12 @@ import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRe
 @Menu(order = 0, icon = "vaadin:clipboard-check", title = "Task List")
 class TaskListView extends Main {
 
+    // --- Variáveis de Serviço ---
     private final TaskService taskService;
+    // (Adicionada para a Ficha 2, Tarefa C)
+    private final ExchangeRateService exchangeService = new ExchangeRateService();
 
+    // --- Componentes da UI (Tarefas) ---
     final TextField description;
     final DatePicker dueDate;
     final Button createBtn;
@@ -48,6 +62,7 @@ class TaskListView extends Main {
     TaskListView(TaskService taskService) {
         this.taskService = taskService;
 
+        // --- UI de Criação de Tarefas ---
         description = new TextField();
         description.setPlaceholder("What do you want to do?");
         description.setAriaLabel("Task description");
@@ -61,6 +76,7 @@ class TaskListView extends Main {
         createBtn = new Button("Create", event -> createTask());
         createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
+        // --- Configuração da Grelha (Grid) de Tarefas ---
         var dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(getLocale())
                 .withZone(ZoneId.systemDefault());
         var dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(getLocale());
@@ -72,7 +88,7 @@ class TaskListView extends Main {
                 .setHeader("Due Date");
         taskGrid.addColumn(task -> dateTimeFormatter.format(task.getCreationDate())).setHeader("Creation Date");
 
-        // START: ADICIONAR COLUNA DO BOTÃO QR CODE
+        // Coluna do Botão QR Code
         taskGrid.addComponentColumn(task -> {
             Button qrButton = new Button("QR");
             qrButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
@@ -80,16 +96,69 @@ class TaskListView extends Main {
             qrButton.addClickListener(event -> showQrCodeDialog(task)); // LIGAÇÃO AO MÉTODO
             return qrButton;
         }).setHeader("QR").setWidth("5em").setFlexGrow(0);
-        // END: ADICIONAR COLUNA DO BOTÃO QR CODE
 
         taskGrid.setSizeFull();
 
+        // --- Layout Principal ---
         setSizeFull();
         addClassNames(LumoUtility.BoxSizing.BORDER, LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.Padding.MEDIUM, LumoUtility.Gap.SMALL);
 
         add(new ViewToolbar("Task List", ViewToolbar.group(description, dueDate, createBtn)));
         add(taskGrid);
+
+        // --- INÍCIO: Funcionalidade de Câmbio de Moeda (Ficha 2, Tarefa C) ---
+
+        H3 title = new H3("Conversor de Moeda");
+
+        TextField amountField = new TextField("Valor a converter (EUR)");
+        amountField.setPlaceholder("10.00");
+
+        Select<String> toCurrency = new Select<>();
+        toCurrency.setLabel("Converter para");
+        toCurrency.setItems("USD", "BRL", "GBP", "JPY"); // Moedas de exemplo
+        toCurrency.setValue("USD"); // Valor por defeito
+
+        Button convertButton = new Button("Converter");
+        Paragraph resultDisplay = new Paragraph("Resultado:");
+
+        HorizontalLayout converterLayout = new HorizontalLayout(
+                amountField,
+                toCurrency,
+                convertButton
+        );
+        converterLayout.setAlignItems(Alignment.BASELINE);
+
+        convertButton.addClickListener(click -> {
+            try {
+                double amount = Double.parseDouble(amountField.getValue());
+                String from = "EUR"; // Fixo, por exemplo
+                String to = toCurrency.getValue();
+
+                // Chamar o serviço de backend
+                double convertedValue = exchangeService.convert(from, to, amount);
+
+                if (convertedValue != -1.0) {
+                    resultDisplay.setText(String.format(
+                            "Resultado: %.2f %s = %.2f %s",
+                            amount, from, convertedValue, to
+                    ));
+                } else {
+                    resultDisplay.setText("Erro: Não foi possível converter.");
+                }
+            } catch (NumberFormatException e) {
+                resultDisplay.setText("Erro: 'Valor' tem de ser um número.");
+            }
+        });
+
+        // Adicionar os novos componentes à vista principal
+        add(
+                title,
+                converterLayout,
+                resultDisplay
+        );
+
+        // --- FIM: Funcionalidade de Câmbio de Moeda ---
     }
 
     private void createTask() {
@@ -101,7 +170,7 @@ class TaskListView extends Main {
                 .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
     }
 
-    // START: MÉTODO showQrCodeDialog PARA APRESENTAÇÃO
+    // --- Método showQrCodeDialog PARA APRESENTAÇÃO ---
     private void showQrCodeDialog(Task task) {
 
         // 1. Definir o conteúdo do QR Code (usando campos da classe Task)
@@ -133,5 +202,4 @@ class TaskListView extends Main {
         dialog.add(qrImage);
         dialog.open();
     }
-    // END: MÉTODO showQrCodeDialog PARA APRESENTAÇÃO
 }
