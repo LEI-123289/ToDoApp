@@ -1,0 +1,9 @@
+{
+  "customizations": {
+    "jetbrains": {
+      "backend": "IntelliJ"
+    }
+  },
+  "image": "mcr.microsoft.com/devcontainers/java:17",
+  "name": "Java Dev Container"
+}
